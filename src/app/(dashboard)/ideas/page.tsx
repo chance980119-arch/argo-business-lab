@@ -15,6 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Lightbulb,
   ThumbsUp,
   Loader2,
@@ -23,6 +29,8 @@ import {
   LayoutDashboard,
   Wrench,
   HelpCircle,
+  Clock,
+  User,
 } from "lucide-react";
 
 interface TeamIdea {
@@ -53,6 +61,7 @@ export default function IdeasPage() {
   const [ideas, setIdeas] = useState<TeamIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<TeamIdea | null>(null);
 
   // Form state
   const [teamName, setTeamName] = useState("");
@@ -227,7 +236,11 @@ export default function IdeasPage() {
               const CategoryIcon = categoryConfig.icon;
 
               return (
-                <Card key={idea.id} className="relative">
+                <Card
+                  key={idea.id}
+                  className="relative cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setSelectedIdea(idea)}
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -242,7 +255,10 @@ export default function IdeasPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleVote(idea.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVote(idea.id);
+                        }}
                         className="gap-1"
                       >
                         <ThumbsUp className="h-4 w-4" />
@@ -254,10 +270,13 @@ export default function IdeasPage() {
                       by <span className="font-medium">{idea.team_name}</span>
                     </p>
                     {idea.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-3">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {idea.description}
                       </p>
                     )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      클릭하여 상세 보기
+                    </p>
                   </CardContent>
                 </Card>
               );
@@ -265,6 +284,87 @@ export default function IdeasPage() {
           </div>
         )}
       </div>
+
+      {/* 상세 보기 다이얼로그 */}
+      <Dialog open={!!selectedIdea} onOpenChange={() => setSelectedIdea(null)}>
+        <DialogContent className="max-w-lg">
+          {selectedIdea && (() => {
+            const categoryConfig = CATEGORY_CONFIG[selectedIdea.category];
+            const statusConfig = STATUS_CONFIG[selectedIdea.status];
+            const CategoryIcon = categoryConfig.icon;
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-xl">{selectedIdea.idea_title}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {/* 배지 */}
+                  <div className="flex items-center gap-2">
+                    <Badge className={categoryConfig.color}>
+                      <CategoryIcon className="h-3 w-3 mr-1" />
+                      {categoryConfig.label}
+                    </Badge>
+                    <Badge className={statusConfig.color}>
+                      {statusConfig.label}
+                    </Badge>
+                  </div>
+
+                  {/* 팀 정보 */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{selectedIdea.team_name}</span>
+                  </div>
+
+                  {/* 등록 시간 */}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {new Date(selectedIdea.created_at).toLocaleString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+
+                  {/* 설명 */}
+                  {selectedIdea.description ? (
+                    <div className="bg-muted p-4 rounded-lg">
+                      <p className="text-sm whitespace-pre-wrap">{selectedIdea.description}</p>
+                    </div>
+                  ) : (
+                    <div className="bg-muted p-4 rounded-lg text-center">
+                      <p className="text-sm text-muted-foreground">설명이 없습니다</p>
+                    </div>
+                  )}
+
+                  {/* 투표 */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <span className="text-sm text-muted-foreground">이 아이디어에 투표하기</span>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        handleVote(selectedIdea.id);
+                        setSelectedIdea({
+                          ...selectedIdea,
+                          votes: selectedIdea.votes + 1,
+                        });
+                      }}
+                      className="gap-2"
+                    >
+                      <ThumbsUp className="h-4 w-4" />
+                      {selectedIdea.votes}표
+                    </Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
