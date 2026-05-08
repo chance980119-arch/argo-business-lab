@@ -31,6 +31,8 @@ import {
   HelpCircle,
   Clock,
   User,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 
 interface TeamIdea {
@@ -42,6 +44,15 @@ interface TeamIdea {
   category: "automation" | "dashboard" | "tool" | "other";
   votes: number;
   status: "submitted" | "in_progress" | "done";
+  comment_count?: number;
+}
+
+interface IdeaComment {
+  id: string;
+  created_at: string;
+  idea_id: string;
+  author_name: string;
+  content: string;
 }
 
 const CATEGORY_CONFIG = {
@@ -68,6 +79,13 @@ export default function IdeasPage() {
   const [ideaTitle, setIdeaTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<string>("automation");
+
+  // Comment state
+  const [comments, setComments] = useState<IdeaComment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentAuthor, setCommentAuthor] = useState("");
+  const [commentContent, setCommentContent] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   const fetchIdeas = useCallback(async () => {
     try {
@@ -133,6 +151,55 @@ export default function IdeasPage() {
     }
   };
 
+  // 댓글 불러오기
+  const fetchComments = useCallback(async (ideaId: string) => {
+    setLoadingComments(true);
+    try {
+      const res = await fetch(`/api/ideas?idea_id=${ideaId}`);
+      const data = await res.json();
+      setComments(data.comments || []);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, []);
+
+  // 아이디어 선택 시 댓글도 불러오기
+  const handleSelectIdea = useCallback((idea: TeamIdea) => {
+    setSelectedIdea(idea);
+    fetchComments(idea.id);
+  }, [fetchComments]);
+
+  // 댓글 제출
+  const handleSubmitComment = async () => {
+    if (!selectedIdea || !commentAuthor.trim() || !commentContent.trim()) return;
+
+    setSubmittingComment(true);
+    try {
+      const res = await fetch("/api/ideas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "comment",
+          idea_id: selectedIdea.id,
+          author_name: commentAuthor.trim(),
+          content: commentContent.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        setCommentContent("");
+        fetchComments(selectedIdea.id);
+        fetchIdeas(); // 댓글 수 갱신
+      }
+    } catch (error) {
+      console.error("Failed to submit comment:", error);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 헤더 */}
@@ -168,7 +235,7 @@ export default function IdeasPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">카테고리</Label>
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={category} onValueChange={(v) => v && setCategory(v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -239,7 +306,7 @@ export default function IdeasPage() {
                 <Card
                   key={idea.id}
                   className="relative cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => setSelectedIdea(idea)}
+                  onClick={() => handleSelectIdea(idea)}
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
@@ -274,9 +341,13 @@ export default function IdeasPage() {
                         {idea.description}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      클릭하여 상세 보기
-                    </p>
+                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        {idea.comment_count || 0}
+                      </span>
+                      <span>클릭하여 상세 보기</span>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -286,7 +357,10 @@ export default function IdeasPage() {
       </div>
 
       {/* 상세 보기 다이얼로그 */}
-      <Dialog open={!!selectedIdea} onOpenChange={() => setSelectedIdea(null)}>
+      <Dialog open={!!selectedIdea} onOpenChange={() => {
+        setSelectedIdea(null);
+        setComments([]);
+      }}>
         <DialogContent className="max-w-lg">
           {selectedIdea && (() => {
             const categoryConfig = CATEGORY_CONFIG[selectedIdea.category];
@@ -358,6 +432,75 @@ export default function IdeasPage() {
                       <ThumbsUp className="h-4 w-4" />
                       {selectedIdea.votes}표
                     </Button>
+                  </div>
+
+                  {/* 댓글 섹션 */}
+                  <div className="pt-4 border-t space-y-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      댓글 ({comments.length})
+                    </h4>
+
+                    {/* 댓글 목록 */}
+                    <div className="space-y-3 max-h-48 overflow-y-auto">
+                      {loadingComments ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : comments.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          아직 댓글이 없습니다
+                        </p>
+                      ) : (
+                        comments.map((comment) => (
+                          <div key={comment.id} className="bg-muted p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">{comment.author_name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(comment.created_at).toLocaleString("ko-KR", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-sm">{comment.content}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* 댓글 입력 */}
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="이름"
+                        value={commentAuthor}
+                        onChange={(e) => setCommentAuthor(e.target.value)}
+                        className="text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <Textarea
+                          placeholder="댓글을 입력하세요..."
+                          value={commentContent}
+                          onChange={(e) => setCommentContent(e.target.value)}
+                          rows={2}
+                          className="text-sm flex-1"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleSubmitComment}
+                          disabled={submittingComment || !commentAuthor.trim() || !commentContent.trim()}
+                          className="self-end"
+                        >
+                          {submittingComment ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </>

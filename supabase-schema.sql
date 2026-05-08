@@ -133,3 +133,36 @@ CREATE INDEX IF NOT EXISTS idx_training_attendance_status ON training_attendance
 
 ALTER TABLE training_attendance ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all for training_attendance" ON training_attendance FOR ALL USING (true) WITH CHECK (true);
+
+-- 5. team_ideas 테이블 (아이디어 보드)
+CREATE TABLE IF NOT EXISTS team_ideas (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  team_name TEXT NOT NULL,
+  idea_title TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL DEFAULT 'other' CHECK (category IN ('automation', 'dashboard', 'tool', 'other')),
+  votes INTEGER DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'in_progress', 'done'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_ideas_votes ON team_ideas(votes DESC);
+
+ALTER TABLE team_ideas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for team_ideas" ON team_ideas FOR ALL USING (true) WITH CHECK (true);
+
+-- 6. idea_comments 테이블 (아이디어 댓글)
+CREATE TABLE IF NOT EXISTS idea_comments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  idea_id UUID NOT NULL REFERENCES team_ideas(id) ON DELETE CASCADE,
+
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_idea_comments_idea_id ON idea_comments(idea_id);
+
+ALTER TABLE idea_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for idea_comments" ON idea_comments FOR ALL USING (true) WITH CHECK (true);
