@@ -161,7 +161,26 @@ export default function NewMenuPage() {
 - **Database**: Supabase (PostgreSQL)
 - **Package Manager**: pnpm
 
-## 주의사항
+## Supabase DB 직접 접근
+
+데이터베이스에 직접 쿼리하려면:
+
+```bash
+# 환경 변수 설정 (교육 진행자에게 토큰 받기)
+export SUPABASE_ACCESS_TOKEN="<토큰>"
+
+# 쿼리 실행
+supabase db query --linked "SELECT * FROM sellers"
+```
+
+자세한 내용: `.codex/supabase-db.md` 또는 `.claude/commands/db.md`
+
+### 주의사항
+
+- **DROP TABLE 절대 금지** - 모든 참가자 데이터 삭제됨
+- **WHERE 없는 DELETE/UPDATE 금지** - 전체 데이터 영향
+
+## 기타 주의사항
 
 - shadcn/ui v4는 `asChild` prop을 지원하지 않음. `render` prop 또는 `buttonVariants()` 사용
 - Next.js 16은 훈련 데이터와 다를 수 있음. `node_modules/next/dist/docs/` 참고
