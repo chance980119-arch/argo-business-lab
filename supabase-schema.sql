@@ -109,3 +109,27 @@ VALUES
   ('Fashion Plus', '이마케팅', 'lee@fashionplus.kr', 'negotiating', 'D2C', 'Fashion', ARRAY['Shopify'], ARRAY['US', 'UK'], 2000, 80, '계약 협상 진행 중'),
   ('Skincare Lab', '박대표', 'park@skincarelab.com', 'lead', 'B2B', 'K-Beauty', NULL, ARRAY['KR'], NULL, NULL, '인바운드 문의')
 ON CONFLICT DO NOTHING;
+
+-- 4. training_attendance 테이블 (교육 출석체크)
+CREATE TABLE IF NOT EXISTS training_attendance (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  -- 참가자 정보
+  participant_name TEXT NOT NULL,
+  github_username TEXT,
+
+  -- 상태
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'ready', 'completed')),
+
+  -- Agent가 기록하는 이벤트 로그
+  events JSONB DEFAULT '[]'::jsonb,
+
+  -- 마지막 활동 시간
+  last_active_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_training_attendance_status ON training_attendance(status);
+
+ALTER TABLE training_attendance ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for training_attendance" ON training_attendance FOR ALL USING (true) WITH CHECK (true);

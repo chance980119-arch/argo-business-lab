@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Users, LayoutDashboard, Package, FileText, Settings } from "lucide-react";
+import { Users, LayoutDashboard, Package, FileText, Settings, GraduationCap } from "lucide-react";
 
 // 메뉴 항목 - 여기에 새 메뉴 추가하면 됨
 const menuItems = [
@@ -23,6 +23,12 @@ const menuItems = [
     icon: Users,
     href: "/crm",
     description: "고객(셀러) 관리",
+  },
+  {
+    title: "교육",
+    icon: GraduationCap,
+    href: "/training",
+    description: "교육 현황 및 출석체크",
   },
   // 새 메뉴 추가 예시:
   // {

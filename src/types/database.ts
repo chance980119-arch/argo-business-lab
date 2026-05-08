@@ -154,3 +154,24 @@ export const ACTIVITY_TYPE_OPTIONS = [
   { value: "contract", label: "계약" },
   { value: "other", label: "기타" },
 ] as const;
+
+// Training Attendance (교육 출석)
+export interface TrainingAttendance {
+  id: string;
+  created_at: string;
+  participant_name: string;
+  github_username: string | null;
+  status: "pending" | "ready" | "completed";
+  events: TrainingEvent[];
+  last_active_at: string;
+}
+
+export interface TrainingEvent {
+  type: "joined" | "env_ready" | "first_build" | "custom";
+  message: string;
+  timestamp: string;
+}
+
+export type TrainingAttendanceInsert = Omit<TrainingAttendance, "id" | "created_at" | "last_active_at" | "events"> & {
+  events?: TrainingEvent[];
+};
