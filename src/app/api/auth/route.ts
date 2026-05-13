@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import * as jose from "jose";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "argo-business-lab-secret-key-2024"
@@ -70,12 +73,30 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // TODO: 실제 이메일 발송 (Resend, SendGrid 등)
-    // 현재는 콘솔에 출력 (개발용)
-    console.log(`\n========================================`);
-    console.log(`인증 코드 발송: ${email}`);
-    console.log(`코드: ${code}`);
-    console.log(`========================================\n`);
+    // Resend로 이메일 발송
+    try {
+      await resend.emails.send({
+        from: "Argo Business Lab <noreply@makitt.shop>",
+        to: email,
+        subject: "[Argo Business Lab] 인증 코드",
+        html: `
+          <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #333;">Argo Business Lab</h2>
+            <p>안녕하세요! 로그인을 위한 인증 코드입니다.</p>
+            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #333;">${code}</span>
+            </div>
+            <p style="color: #666; font-size: 14px;">이 코드는 10분 후에 만료됩니다.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #999; font-size: 12px;">본인이 요청하지 않았다면 이 이메일을 무시해주세요.</p>
+          </div>
+        `,
+      });
+      console.log(`인증 코드 발송 완료: ${email}`);
+    } catch (error) {
+      console.error("이메일 발송 실패:", error);
+      // 이메일 발송 실패해도 개발 모드에서는 코드 반환
+    }
 
     return NextResponse.json({
       success: true,
