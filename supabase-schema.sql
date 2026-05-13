@@ -166,3 +166,80 @@ CREATE INDEX IF NOT EXISTS idx_idea_comments_idea_id ON idea_comments(idea_id);
 
 ALTER TABLE idea_comments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all for idea_comments" ON idea_comments FOR ALL USING (true) WITH CHECK (true);
+
+-- 7. users 테이블 (인증)
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  email TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  verification_code TEXT,
+  code_expires_at TIMESTAMP WITH TIME ZONE,
+  is_verified BOOLEAN DEFAULT FALSE,
+  last_login_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for users" ON users FOR ALL USING (true) WITH CHECK (true);
+
+-- 8. profiles 테이블 (자기소개)
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  display_name TEXT NOT NULL,
+  team TEXT,
+  role TEXT,
+  bio TEXT,
+  github_username TEXT,
+  avatar_url TEXT,
+  skills TEXT[],
+  fun_fact TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for profiles" ON profiles FOR ALL USING (true) WITH CHECK (true);
+
+-- 9. curriculum_days 테이블 (미션)
+CREATE TABLE IF NOT EXISTS curriculum_days (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  day_number INTEGER UNIQUE NOT NULL,
+  phase TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  mission_content TEXT,
+  agent_prompt TEXT,
+  clear_criteria TEXT[],
+  bonus_mission TEXT,
+  estimated_minutes INTEGER DEFAULT 30
+);
+
+CREATE INDEX IF NOT EXISTS idx_curriculum_days_day_number ON curriculum_days(day_number);
+
+ALTER TABLE curriculum_days ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for curriculum_days" ON curriculum_days FOR ALL USING (true) WITH CHECK (true);
+
+-- 10. user_progress 테이블 (진행현황)
+CREATE TABLE IF NOT EXISTS user_progress (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day_number INTEGER NOT NULL REFERENCES curriculum_days(day_number) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+  started_at TIMESTAMP WITH TIME ZONE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  submission_url TEXT,
+  notes TEXT,
+  UNIQUE(user_id, day_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_progress_user_id ON user_progress(user_id);
+
+ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for user_progress" ON user_progress FOR ALL USING (true) WITH CHECK (true);

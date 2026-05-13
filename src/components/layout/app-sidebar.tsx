@@ -14,21 +14,21 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Users, LayoutDashboard, Package, FileText, Settings, GraduationCap, Lightbulb } from "lucide-react";
+import { Users, LayoutDashboard, Package, FileText, Settings, GraduationCap, Lightbulb, BookOpen, UserCircle } from "lucide-react";
 
 // 메뉴 항목 - 여기에 새 메뉴 추가하면 됨
 const menuItems = [
   {
-    title: "CRM",
-    icon: Users,
-    href: "/crm",
-    description: "고객(셀러) 관리",
+    title: "커리큘럼",
+    icon: BookOpen,
+    href: "/curriculum",
+    description: "Daily Dev Mission",
   },
   {
-    title: "교육",
-    icon: GraduationCap,
-    href: "/training",
-    description: "교육 현황 및 출석체크",
+    title: "팀원 소개",
+    icon: UserCircle,
+    href: "/about",
+    description: "참가자 프로필",
   },
   {
     title: "아이디어",
@@ -36,13 +36,18 @@ const menuItems = [
     href: "/ideas",
     description: "팀별 아이디어 제출",
   },
-  // 새 메뉴 추가 예시:
-  // {
-  //   title: "재고 관리",
-  //   icon: Package,
-  //   href: "/inventory",
-  //   description: "상품 재고 관리",
-  // },
+  {
+    title: "교육 현황",
+    icon: GraduationCap,
+    href: "/training",
+    description: "출석체크",
+  },
+  {
+    title: "CRM",
+    icon: Users,
+    href: "/crm",
+    description: "고객(셀러) 관리",
+  },
 ];
 
 export function AppSidebar() {
