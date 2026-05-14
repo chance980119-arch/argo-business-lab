@@ -15,6 +15,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Users, LayoutDashboard, Package, FileText, Settings, GraduationCap, Lightbulb, BookOpen, UserCircle } from "lucide-react";
+import { UserMenu } from "@/components/auth/user-menu";
 
 // 메뉴 항목 - 여기에 새 메뉴 추가하면 됨
 const menuItems = [
@@ -92,11 +93,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t p-4">
-        <div className="text-xs text-muted-foreground">
-          새 기능이 필요하면
-          <br />
-          Claude에게 요청하세요!
-        </div>
+        <UserMenu />
       </SidebarFooter>
     </Sidebar>
   );
